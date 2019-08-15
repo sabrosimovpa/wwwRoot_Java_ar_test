@@ -1,20 +1,133 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>My A-Frame Scene</title>
-    <script src="https://aframe.io/releases/0.6.0/aframe.min.js"></script>
+    <script src="https://aframe.io/releases/0.6.1/aframe.js"></script>
     <script src="https://jeromeetienne.github.io/AR.js/aframe/build/aframe-ar.js"></script>
 </head>
+
 <body>
     <!-- Aframe scene -->
-  
-    <a-scene embedded arjs renderer="precision: mediump">
+
+    <a-scene embedded arjs>
         <!-- Declaring chart component -->
-        <a-box position='0 0 -4' material='color: green;'></a-box>
+        <a-entity id="sceneRoot">
+            <a-box position='0 0 -2' depth="0.5" height="0.5" width="0.5" material='color: green;'></a-box>
+            <a-text position='0 1 -2' value="Hello, World!"></a-text>
+        </a-entity>
         <!-- Aframe camera -->
-        <a-entity camera look-controls pointerLockEnabled>
+        <a-entity id="mainCamera" camera look-controls>
             <a-cursor></a-cursor>
+            <a-text id="sensorsData" position='-0.05 -0.05 -1' wrap-count="500" color="red" value="Hello, World!">
+            </a-text>
         </a-entity>
     </a-scene>
+
+    <script>
+        //renderer="precision: mediump"
+        //pointerLockEnabled
+        function simplyVector() {
+            var vec = { X: 0.0, Y: 0.0, Z: 0.0 }
+            return vec
+        }
+        function simpleVectorCPY(vector) {
+            var newVec = simplyVector()
+            newVec.X = vector.X
+            newVec.Y = vector.Y
+            newVec.Z = vector.Z
+
+            return newVec
+        }
+
+        var velocity = simplyVector();
+        var privAcl = simplyVector();
+        var path = simplyVector();
+
+        var box = document.querySelector('a-box');
+        var sceneRoot = document.getElementById('sceneRoot')
+        var informDiv = document.getElementById("sensorsData")
+        var camera = document.getElementById("mainCamera")
+        informDiv.setAttribute("value", "Hello")
+
+        navigator.permissions.query({ name: 'accelerometer' }).then(result => {
+            if (result.state === 'denied') {
+                console.log('Permission to use accelerometer sensor is denied.');
+                return;
+            }
+            const shakeThreshold = 0.1;
+            let acl = new LinearAccelerationSensor({ frequency: 60 });
+            let max_magnitude = 0;
+            var startTime = undefined;
+            var nowTime = undefined;
+            var zS = yS = xS = 0.0;
+            var zPriv = yPriv = xPriv = 0.0;
+            acl.addEventListener('activate', () => console.log('Ready to measure.'));
+            acl.addEventListener('error', error => console.log(`Error: ${error.name}`));
+            acl.addEventListener('reading', () => {
+                if (startTime === undefined) {
+                    privAcl.X = acl.x;
+                    privAcl.Y = acl.y;
+                    privAcl.Z = acl.z;
+                    startTime = acl.timestamp;
+                    return
+                }
+                let delta = (acl.timestamp - startTime) * 0.001;
+                startTime = acl.timestamp;
+
+                velocity.X = (privAcl.X + acl.x) / 2.0 * delta + velocity.X;
+                velocity.Y = (privAcl.Y + acl.y) / 2.0 * delta + velocity.Y;
+                velocity.Z = (privAcl.Z + acl.z) / 2.0 * delta + velocity.Z;
+                privAcl.X = acl.x;
+                privAcl.Y = acl.y;
+                privAcl.Z = acl.z;
+
+                var curPath = simplyVector()
+                curPath.X = velocity.X * delta;
+                curPath.Y = velocity.Y * delta;
+                curPath.Z = velocity.Z * delta;
+
+                path.X = path.X + curPath.X;
+                path.Y = path.Y + curPath.Y;
+                path.Z = path.Z + curPath.Z;
+
+                sceneRoot.object3D.position.x = path.X
+                sceneRoot.object3D.position.y = path.Y
+                sceneRoot.object3D.position.z = path.Z
+
+                console.log("velocity");
+                console.log(velocity);
+                console.log("curPath");
+                console.log("curPath");
+                console.log(path);
+                console.log("path");
+
+                // let magnitude = Math.hypot(acl.x, acl.y, acl.z);
+                // if (Math.abs(acl.x) > shakeThreshold || Math.abs(acl.y) > shakeThreshold|| Math.abs(acl.z) > shakeThreshold) {
+                //     console.log("before:")
+                //     console.log(sceneRoot.object3D.position)
+                //     // camera.object3D.position.x = sceneRoot.object3D.position.x - acl.x
+                //     // camera.object3D.position.y = sceneRoot.object3D.position.y - acl.y
+                //     // camera.object3D.position.z = sceneRoot.object3D.position.z - acl.z
+                //     camera.object3D.position.x = camera.object3D.position.x - acl.x
+                //     camera.object3D.position.y = camera.object3D.position.y - acl.y
+                //     camera.object3D.position.z = camera.object3D.position.z - acl.z
+                //     console.log("after:")
+                //     console.log(sceneRoot.object3D.position)
+                // }
+                // if (magnitude > max_magnitude) {
+                //     max_magnitude = magnitude;
+                //     //console.log(`Max magnitude: ${max_magnitude} m/s2`);
+                // }
+            });
+
+            console.log(box.object3D.position);
+            setTimeout(function () {
+                acl.start();
+            }, 5000);
+
+        });
+    </script>
 </body>
+
 </html>
