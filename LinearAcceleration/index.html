@@ -31,11 +31,6 @@
     </p>
 
     <script>
-        function simplyVector()
-        {
-            var vec = {X: 0.0, Y:0.0, Z:0.0}
-            return vec
-        }
 
         function simplyVector()
         {
@@ -52,12 +47,13 @@
             return newVec
         }
 
+        var aclThreshold = 0.08
         var Startbutton = undefined;
         var Stopbutton = undefined;
         var rawData = undefined;
         var rawDataDiv = undefined;
         var aclData = undefined
-        let acl = new LinearAccelerationSensor({ frequency: 10 });
+        let acl = new LinearAccelerationSensor({ frequency: 60 });
         // let acl = new Accelerometer ();
         var startTime = undefined;
 
@@ -81,7 +77,7 @@
             var tmpData = rawData
             rawData = undefined
             startTime = undefined
-            var myJSON = JSON.stringify(tmpData);
+            var myJSON = JSON.stringify(path);
             rawDataDiv.innerHTML = myJSON;
             console.log(myJSON)
         }
@@ -94,12 +90,28 @@
                 let delta = (acl.timestamp - startTime) * 0.001;
                 startTime = acl.timestamp;
 
-                velocity.X = (privAcl.X + acl.x) / 2.0 * delta + velocity.X;
-                velocity.Y = (privAcl.Y + acl.y) / 2.0 * delta + velocity.Y;
-                velocity.Z = (privAcl.Z + acl.z) / 2.0 * delta + velocity.Z;
-                privAcl.X = acl.x;
-                privAcl.Y = acl.y;
-                privAcl.Z = acl.z;
+                var aclRaw = simplyVector()
+                if(Math.abs(acl.x) >= aclThreshold)
+                {
+                    aclRaw.X = acl.x
+                }
+
+                if(Math.abs(acl.y) >= aclThreshold)
+                {
+                    aclRaw.Y = acl.y
+                }
+
+                if(Math.abs(acl.z) >= aclThreshold)
+                {
+                    aclRaw.Z = acl.z
+                }
+
+                velocity.X = (privAcl.X + aclRaw.X) / 2.0 * delta + velocity.X;
+                velocity.Y = (privAcl.Y + aclRaw.Y) / 2.0 * delta + velocity.Y;
+                velocity.Z = (privAcl.Z + aclRaw.Z) / 2.0 * delta + velocity.Z;
+                privAcl.X = aclRaw.X;
+                privAcl.Y = aclRaw.Y;
+                privAcl.Z = aclRaw.Z;
 
                 var curPath = simplyVector()
                 curPath.X = velocity.X * delta;

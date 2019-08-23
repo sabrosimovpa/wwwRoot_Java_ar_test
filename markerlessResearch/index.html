@@ -19,7 +19,7 @@
         <!-- Aframe camera -->
         <a-entity id="mainCamera" camera look-controls>
             <a-cursor></a-cursor>
-            <a-text id="sensorsData" position='-0.05 -0.05 -1' wrap-count="500" color="red" value="Hello, World!">
+            <!-- <a-text id="sensorsData" position='-0.05 -0.05 -1' wrap-count="500" color="red" value="Hello, World!"> -->
             </a-text>
         </a-entity>
     </a-scene>
@@ -48,7 +48,7 @@
         var sceneRoot = document.getElementById('sceneRoot')
         var informDiv = document.getElementById("sensorsData")
         var camera = document.getElementById("mainCamera")
-        informDiv.setAttribute("value", "Hello")
+        // informDiv.setAttribute("value", "Hello")
 
         navigator.permissions.query({ name: 'accelerometer' }).then(result => {
             if (result.state === 'denied') {
